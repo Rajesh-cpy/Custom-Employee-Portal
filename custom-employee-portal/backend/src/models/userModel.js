@@ -16,6 +16,16 @@ const userModel = {
     return res.rows[0] || null;
   },
 
+  async getUserRoles(userId) {
+    const res = await query(`
+      SELECT r.id, r.name, r.description 
+      FROM roles r
+      JOIN user_roles ur ON r.id = ur.role_id
+      WHERE ur.user_id = $1
+    `, [userId]);
+    return res.rows.map(r => r.name);
+  },
+
   async getAllUsers() {
     const res = await query(`
       SELECT 
@@ -26,9 +36,13 @@ const userModel = {
         u.is_active, 
         u.created_at, 
         u.updated_at, 
-        u.last_login_at
+        u.last_login_at,
+        COALESCE(array_agg(r.name) FILTER (WHERE r.name IS NOT NULL), '{}') AS roles,
+        COALESCE(string_agg(r.name, ', '), 'None') AS role_names
       FROM users u
       LEFT JOIN user_roles ur ON u.id = ur.user_id
+      LEFT JOIN roles r ON ur.role_id = r.id
+      GROUP BY u.id
       ORDER BY u.id ASC
     `);
     return res.rows;

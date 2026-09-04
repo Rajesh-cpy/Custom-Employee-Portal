@@ -74,9 +74,7 @@ const authController = {
 
       // 4. Retrieve roles and permissions
       const perms = await permissionModel.getPermissionsForUser(user.id);
-      const allUsers = await userModel.getAllUsers();
-      const currentUserEntry = allUsers.find(u => u.id === user.id);
-      const roles = currentUserEntry && currentUserEntry.roles ? currentUserEntry.roles : [];
+      const roles = await userModel.getUserRoles(user.id);
 
       // 5. Generate signed JWT (safe payload only - no password or Zoho secrets)
       const payload = {

@@ -71,9 +71,8 @@ async function authenticateToken(req, res, next) {
 
     // Fetch user's current roles and permissions from database
     const perms = await permissionModel.getPermissionsForUser(user.id);
-    const userWithRoles = await userModel.getAllUsers();
-    const userDetail = userWithRoles.find(u => u.id === user.id);
-    const roles = userDetail && userDetail.roles ? userDetail.roles : (decoded.roles || []);
+    const dbRoles = await userModel.getUserRoles(user.id);
+    const roles = dbRoles.length > 0 ? dbRoles : (decoded.roles || []);
 
     req.user = {
       id: user.id,
