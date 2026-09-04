@@ -8,20 +8,28 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 function MainRouter() {
   const { isAuthenticated, loading } = useAuth();
-  const [currentRoute, setCurrentRoute] = useState('dashboard');
+  const [currentRoute, setCurrentRoute] = useState('root');
 
   // Synchronize initial browser URL path
   useEffect(() => {
-    const path = window.location.pathname.replace('/', '') || 'dashboard';
-    if (['login', 'dashboard', 'admin'].includes(path)) {
-      setCurrentRoute(path);
+    const rawPath = window.location.pathname.replace(/^\/+/, '');
+    if (!rawPath || rawPath === 'login') {
+      setCurrentRoute('root');
+    } else if (['dashboard', 'admin'].includes(rawPath)) {
+      setCurrentRoute(rawPath);
     } else {
-      setCurrentRoute(path ? '404' : 'dashboard');
+      setCurrentRoute('404');
     }
 
     const handlePopState = () => {
-      const p = window.location.pathname.replace('/', '') || 'dashboard';
-      setCurrentRoute(p);
+      const p = window.location.pathname.replace(/^\/+/, '');
+      if (!p || p === 'login') {
+        setCurrentRoute('root');
+      } else if (['dashboard', 'admin'].includes(p)) {
+        setCurrentRoute(p);
+      } else {
+        setCurrentRoute('404');
+      }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -29,7 +37,7 @@ function MainRouter() {
 
   const navigateTo = (route) => {
     setCurrentRoute(route);
-    const targetPath = route === 'dashboard' ? '/dashboard' : `/${route}`;
+    const targetPath = (route === 'root' || route === 'login') ? '/' : `/${route}`;
     if (window.location.pathname !== targetPath) {
       window.history.pushState(null, '', targetPath);
     }
@@ -43,17 +51,19 @@ function MainRouter() {
     );
   }
 
-  // Routing Switch
+  // 1. Unauthenticated users: Canonical single URL is '/'
   if (!isAuthenticated) {
-    if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
-      window.history.replaceState(null, '', '/login');
+    if (window.location.pathname !== '/') {
+      window.history.replaceState(null, '', '/');
     }
     return <LoginPage onNavigate={navigateTo} />;
   }
 
-  if (currentRoute === 'login') {
-    // If authenticated user visits /login, redirect to /dashboard
-    window.history.replaceState(null, '', '/dashboard');
+  // 2. Authenticated user visiting root '/' or '/login' -> Redirect to '/dashboard'
+  if (currentRoute === 'root' || currentRoute === 'login' || window.location.pathname === '/') {
+    if (window.location.pathname !== '/dashboard') {
+      window.history.replaceState(null, '', '/dashboard');
+    }
     return (
       <ProtectedRoute onNavigate={navigateTo}>
         <DashboardPage onNavigate={navigateTo} />
@@ -61,6 +71,7 @@ function MainRouter() {
     );
   }
 
+  // 3. Authenticated Dashboard route
   if (currentRoute === 'dashboard') {
     return (
       <ProtectedRoute onNavigate={navigateTo}>
@@ -69,6 +80,7 @@ function MainRouter() {
     );
   }
 
+  // 4. Authenticated Admin route
   if (currentRoute === 'admin') {
     return (
       <ProtectedRoute adminOnly={true} onNavigate={navigateTo}>

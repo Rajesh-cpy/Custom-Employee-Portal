@@ -27,10 +27,10 @@ api.interceptors.response.use(
     // If token expired or deactivated, trigger clean redirect
     if (error.response && error.response.status === 401) {
       const currentPath = window.location.pathname;
-      if (currentPath !== '/login') {
+      if (currentPath !== '/') {
         localStorage.removeItem('brainwave_token');
         localStorage.removeItem('brainwave_user');
-        window.location.href = '/login?expired=1';
+        window.location.href = '/?expired=1';
       }
     }
     return Promise.reject(error);
