@@ -44,8 +44,21 @@ function MainRouter() {
   }
 
   // Routing Switch
-  if (currentRoute === 'login' || (!isAuthenticated && currentRoute !== 'login')) {
+  if (!isAuthenticated) {
+    if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
+      window.history.replaceState(null, '', '/login');
+    }
     return <LoginPage onNavigate={navigateTo} />;
+  }
+
+  if (currentRoute === 'login') {
+    // If authenticated user visits /login, redirect to /dashboard
+    window.history.replaceState(null, '', '/dashboard');
+    return (
+      <ProtectedRoute onNavigate={navigateTo}>
+        <DashboardPage onNavigate={navigateTo} />
+      </ProtectedRoute>
+    );
   }
 
   if (currentRoute === 'dashboard') {
