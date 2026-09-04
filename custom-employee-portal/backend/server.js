@@ -18,7 +18,10 @@ const PORT = process.env.PORT || 5000;
 
 // Security & Utility Middlewares
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Allow server-to-server, curl, and all frontend origins
+    callback(null, true);
+  },
   credentials: true
 }));
 
@@ -28,6 +31,24 @@ app.use(express.urlencoded({ extended: true }));
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
 }
+
+// Root endpoint for health check & documentation links
+app.get('/', (req, res) => {
+  res.status(200).json({
+    status: 'online',
+    service: 'BrainWave Custom Employee Portal API with Zoho One Integration',
+    version: '1.0.0',
+    documentation: 'https://github.com/Rajesh-cpy/Custom-Employee-Portal',
+    health: '/api/health',
+    endpoints: {
+      auth: '/api/auth',
+      zoho: '/api/zoho',
+      users: '/api/users',
+      roles: '/api/roles',
+      audit: '/api/audit-logs'
+    }
+  });
+});
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
